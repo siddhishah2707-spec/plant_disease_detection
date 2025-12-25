@@ -21,12 +21,15 @@ warnings.filterwarnings("ignore")
 def load_model_and_labels():
     with contextlib.redirect_stdout(io.StringIO()):
         try:
-    model = tf.keras.models.load_model("models/best_model.keras", compile=False)
-except:
-    model = tf.keras.models.load_model("models/best_model.h5", compile=False)
+            model = tf.keras.models.load_model("models/best_model.keras", compile=False)
+        except Exception as e:
+            st.warning(f"⚠️ Loading .keras model failed: {e}. Trying .h5 instead.")
+            model = tf.keras.models.load_model("models/best_model.h5", compile=False)
+
     with open("models/class_labels.pkl", "rb") as f:
         class_labels = pickle.load(f)
     return model, class_labels
+
 
 model, class_labels = load_model_and_labels()
 last_conv_layer_name = "Conv_1"
@@ -193,6 +196,7 @@ elif page == "📊 Disease Class Chart":
     st.dataframe(classes_df, use_container_width=True)
     st.markdown("---")
     st.info("Use the sidebar to return to **Prediction**, **Grad-CAM**, or **History** pages.")
+
 # ------------------ PAGE 4: PREDICTION HISTORY ------------------
 elif page == "📁 Prediction History":
     st.markdown("<div class='main-title'>📁 Prediction History</div>", unsafe_allow_html=True)
@@ -201,7 +205,6 @@ elif page == "📁 Prediction History":
     if os.path.exists(history_file):
         history_df = pd.read_csv(history_file)
 
-        # --- Filter option ---
         filter_option = st.radio(
             "🩺 Filter by Type:",
             ["All", "Healthy", "Diseased"],
@@ -218,7 +221,6 @@ elif page == "📁 Prediction History":
         st.dataframe(filtered_df, use_container_width=True)
         st.success(f"✅ {len(filtered_df)} records found ({filter_option} leaves).")
 
-        # --- Summary counts ---
         healthy_count = len(history_df[history_df["Predicted Disease"].str.contains("healthy", case=False)])
         diseased_count = len(history_df) - healthy_count
         total = len(history_df)
@@ -226,9 +228,7 @@ elif page == "📁 Prediction History":
         st.markdown("---")
         st.subheader("📊 Health Summary")
 
-        # --- Create pie chart ---
         import matplotlib.pyplot as plt
-
         fig, ax = plt.subplots()
         labels = ["Healthy", "Diseased"]
         values = [healthy_count, diseased_count]
@@ -242,7 +242,7 @@ elif page == "📁 Prediction History":
             colors=colors,
             textprops={"color": "black", "fontsize": 11},
         )
-        ax.axis("equal")  # Equal aspect ratio ensures the pie is a circle
+        ax.axis("equal")
         st.pyplot(fig)
 
         st.markdown(f"**Total Predictions:** {total} | 🟢 Healthy: {healthy_count} | 🔴 Diseased: {diseased_count}")
