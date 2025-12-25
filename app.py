@@ -20,7 +20,10 @@ warnings.filterwarnings("ignore")
 @st.cache_resource
 def load_model_and_labels():
     with contextlib.redirect_stdout(io.StringIO()):
-        model = tf.keras.models.load_model("models/best_model.keras")
+        try:
+    model = tf.keras.models.load_model("models/best_model.keras", compile=False)
+except:
+    model = tf.keras.models.load_model("models/best_model.h5", compile=False)
     with open("models/class_labels.pkl", "rb") as f:
         class_labels = pickle.load(f)
     return model, class_labels
